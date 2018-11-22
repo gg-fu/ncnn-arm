@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "net.h"
 using namespace std;
@@ -362,7 +363,7 @@ int main(int argc, char** argv)
     printf( "%s = %g ms \n ", "Detection All time", getElapse(&tv1, &tv2) );
     for(vector<Bbox>::iterator it=finalBbox.begin(); it!=finalBbox.end();it++){
         if((*it).exist){
-            rectangle(cv_img, Point((*it).x1, (*it).y1), Point((*it).x2, (*it).y2), Scalar(0,0,255), 2,8,0);
+            cv::rectangle(cv_img, Point((*it).x1, (*it).y1), Point((*it).x2, (*it).y2), Scalar(0,0,255), 2,8,0);
             for(int num=0;num<5;num++)circle(cv_img,Point((int)*(it->ppoint+num), (int)*(it->ppoint+num+5)),3,Scalar(0,255,255), -1);
         }
     }
