@@ -33,22 +33,17 @@ public:
     // clear and destroy
     ~Net();
 
-#if NCNN_STRING
     // register custom layer by layer type name
     // return 0 if success
     int register_custom_layer(const char* type, layer_creator_func creator);
-#endif // NCNN_STRING
     // register custom layer by layer type
     // return 0 if success
     int register_custom_layer(int index, layer_creator_func creator);
 
-#if NCNN_STDIO
-#if NCNN_STRING
     // load network structure from plain param file
     // return 0 if success
     int load_param(FILE* fp);
     int load_param(const char* protopath);
-#endif // NCNN_STRING
     // load network structure from binary param file
     // return 0 if success
     int load_param_bin(FILE* fp);
@@ -58,7 +53,6 @@ public:
     // return 0 if success
     int load_model(FILE* fp);
     int load_model(const char* modelpath);
-#endif // NCNN_STDIO
 
     // load network structure from external memory
     // memory pointer must be 32-bit aligned
@@ -80,11 +74,9 @@ public:
 
 protected:
     friend class Extractor;
-#if NCNN_STRING
     int find_blob_index_by_name(const char* name) const;
     int find_layer_index_by_name(const char* name) const;
     int custom_layer_to_index(const char* type);
-#endif // NCNN_STRING
     Layer* create_custom_layer(int index);
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, bool lightmode) const;
 
@@ -108,7 +100,6 @@ public:
     // default count is system depended
     void set_num_threads(int num_threads);
 
-#if NCNN_STRING
     // set input by blob name
     // return 0 if success
     int input(const char* blob_name, const Mat& in);
@@ -116,7 +107,6 @@ public:
     // get result by blob name
     // return 0 if success
     int extract(const char* blob_name, Mat& feat);
-#endif // NCNN_STRING
 
     // set input by blob index
     // return 0 if success

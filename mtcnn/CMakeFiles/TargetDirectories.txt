@@ -1,0 +1,3 @@
+/home/bruvin_lu/tensorflow_test/ncnn/mtcnn/CMakeFiles/rebuild_cache.dir
+/home/bruvin_lu/tensorflow_test/ncnn/mtcnn/CMakeFiles/edit_cache.dir
+/home/bruvin_lu/tensorflow_test/ncnn/mtcnn/CMakeFiles/mtcnn.dir

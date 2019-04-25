@@ -1,0 +1,1 @@
+/usr/bin/c++    -fopenmp -O3 -DNDEBUG   CMakeFiles/mtcnn.dir/mtcnn.cpp.o  -o mtcnn  -L/home/bruvin_lu/opencv_build/lib -Wl,-rpath,/home/bruvin_lu/opencv_build/lib -rdynamic ../src/libncnn.a -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_core -Wl,-rpath-link,/home/bruvin_lu/opencv_build/lib 

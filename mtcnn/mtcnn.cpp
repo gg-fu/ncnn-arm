@@ -6,11 +6,15 @@
 #include <sys/time.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "net.h"
 using namespace std;
 using namespace cv;
+    const float nms_threshold_[3] = {0.5, 0.7, 0.7};
+    const float threshold_[3] = {0.6, 0.6, 0.6};
+    const float mean_vals[3] = {127.5, 127.5, 127.5};
+    const float norm_vals[3] = {0.0078125, 0.0078125, 0.0078125};
 
 struct Bbox
 {
@@ -52,16 +56,12 @@ public:
     void detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox);
 private:
     void generateBbox(ncnn::Mat score, ncnn::Mat location, vector<Bbox>& boundingBox_, vector<orderScore>& bboxScore_, float scale);
-    void nms(vector<Bbox> &boundingBox_, std::vector<orderScore> &bboxScore_, const float overlap_threshold, string modelname="Union");
+    void nms(vector<Bbox> &boundingBox_, std::vector<orderScore> &bboxScore_, const float overlap_threshold_, string modelname="Union");
     void refineAndSquareBbox(vector<Bbox> &vecBbox, const int &height, const int &width);
 
     ncnn::Net Pnet, Rnet, Onet;
     ncnn::Mat img;
 
-    const float nms_threshold[3] = {0.5, 0.7, 0.7};
-    const float threshold[3] = {0.6, 0.6, 0.6};
-    const float mean_vals[3] = {127.5, 127.5, 127.5};
-    const float norm_vals[3] = {0.0078125, 0.0078125, 0.0078125};
     std::vector<Bbox> firstBbox_, secondBbox_,thirdBbox_;
     std::vector<orderScore> firstOrderScore_, secondBboxScore_, thirdBboxScore_;
     int img_w, img_h;
@@ -87,7 +87,7 @@ void mtcnn::generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox>&
     orderScore order;
     for(int row=0;row<score.h;row++){
         for(int col=0;col<score.w;col++){
-            if(*p>threshold[0]){
+            if(*p>threshold_[0]){
                 bbox.score = *p;
                 order.score = *p;
                 order.oriOrder = count;
@@ -108,7 +108,7 @@ void mtcnn::generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox>&
         }
     }
 }
-void mtcnn::nms(std::vector<Bbox> &boundingBox_, std::vector<orderScore> &bboxScore_, const float overlap_threshold, string modelname){
+void mtcnn::nms(std::vector<Bbox> &boundingBox_, std::vector<orderScore> &bboxScore_, const float overlap_threshold_, string modelname){
     if(boundingBox_.empty()){
         return;
     }
@@ -147,7 +147,7 @@ void mtcnn::nms(std::vector<Bbox> &boundingBox_, std::vector<orderScore> &bboxSc
                 else if(!modelname.compare("Min")){
                     IOU = IOU/((boundingBox_.at(num).area<boundingBox_.at(order).area)?boundingBox_.at(num).area:boundingBox_.at(order).area);
                 }
-                if(IOU>overlap_threshold){
+                if(IOU>overlap_threshold_){
                     boundingBox_.at(num).exist=false;
                     for(vector<orderScore>::iterator it=bboxScore_.begin(); it!=bboxScore_.end();it++){
                         if((*it).oriOrder == num) {
@@ -237,7 +237,7 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
         ncnn::Mat in;
         resize_bilinear(img_, in, ws, hs);
         //in.substract_mean_normalize(mean_vals, norm_vals);
-        ncnn::Extractor ex = Pnet.create_extractor();
+	ncnn::Extractor ex = Pnet.create_extractor();
         ex.set_light_mode(true);
         ex.input("data", in);
         ncnn::Mat score_, location_;
@@ -246,7 +246,7 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
         std::vector<Bbox> boundingBox_;
         std::vector<orderScore> bboxScore_;
         generateBbox(score_, location_, boundingBox_, bboxScore_, scales_[i]);
-        nms(boundingBox_, bboxScore_, nms_threshold[0]);
+        nms(boundingBox_, bboxScore_, nms_threshold_[0]);
 
         for(vector<Bbox>::iterator it=boundingBox_.begin(); it!=boundingBox_.end();it++){
             if((*it).exist){
@@ -262,7 +262,7 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
     }
     //the first stage's nms
     if(count<1)return;
-    nms(firstBbox_, firstOrderScore_, nms_threshold[0]);
+    nms(firstBbox_, firstOrderScore_, nms_threshold_[0]);
     refineAndSquareBbox(firstBbox_, img_h, img_w);
     printf("firstBbox_.size()=%d\n", firstBbox_.size());
 
@@ -280,7 +280,7 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
             ncnn::Mat score, bbox;
             ex.extract("prob1", score);
             ex.extract("conv5-2", bbox);
-            if(*(score.data+score.cstep)>threshold[1]){
+            if(*(score.data+score.cstep)>threshold_[1]){
                 for(int channel=0;channel<4;channel++)
                     it->regreCoord[channel]=bbox.channel(channel)[0];//*(bbox.data+channel*bbox.cstep);
                 it->area = (it->x2 - it->x1)*(it->y2 - it->y1);
@@ -297,7 +297,7 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
     }
     printf("secondBbox_.size()=%d\n", secondBbox_.size());
     if(count<1)return;
-    nms(secondBbox_, secondBboxScore_, nms_threshold[1]);
+    nms(secondBbox_, secondBboxScore_, nms_threshold_[1]);
     refineAndSquareBbox(secondBbox_, img_h, img_w);
 
     //third stage 
@@ -315,7 +315,7 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
             ex.extract("prob1", score);
             ex.extract("conv6-2", bbox);
             ex.extract("conv6-3", keyPoint);
-            if(score.channel(1)[0]>threshold[2]){
+            if(score.channel(1)[0]>threshold_[2]){
                 for(int channel=0;channel<4;channel++)
                     it->regreCoord[channel]=bbox.channel(channel)[0];
                 it->area = (it->x2 - it->x1)*(it->y2 - it->y1);
@@ -338,7 +338,7 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
     printf("thirdBbox_.size()=%d\n", thirdBbox_.size());
     if(count<1)return;
     refineAndSquareBbox(thirdBbox_, img_h, img_w);
-    nms(thirdBbox_, thirdBboxScore_, nms_threshold[2], "Min");
+    nms(thirdBbox_, thirdBboxScore_, nms_threshold_[2], "Min");
     finalBbox_ = thirdBbox_;
 }
 

@@ -1,4 +1,3 @@
-
 find_package(OpenCV REQUIRED core highgui imgproc imgcodecs)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)

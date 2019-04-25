@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "net.h"
 using namespace std;
@@ -81,8 +81,8 @@ void mtcnn::generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox>&
     int cellsize = 12;
     int count = 0;
     //score p
-    float *p = score.channel(1);
-    float *plocal = location.channel(0);
+    float *p = score.channel(1);//score.data + score.cstep;
+    float *plocal = location.data;
     Bbox bbox;
     orderScore order;
     for(int row=0;row<score.h;row++){
@@ -280,11 +280,11 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
             ncnn::Mat score, bbox;
             ex.extract("prob1", score);
             ex.extract("conv5-2", bbox);
-            if((score[1])>threshold[1]){
+            if(*(score.data+score.cstep)>threshold[1]){
                 for(int channel=0;channel<4;channel++)
-                    it->regreCoord[channel]=bbox[channel];
+                    it->regreCoord[channel]=bbox.channel(channel)[0];//*(bbox.data+channel*bbox.cstep);
                 it->area = (it->x2 - it->x1)*(it->y2 - it->y1);
-                it->score = score[1];
+                it->score = score.channel(1)[0];//*(score.data+score.cstep);
                 secondBbox_.push_back(*it);
                 order.score = it->score;
                 order.oriOrder = count++;
@@ -315,14 +315,14 @@ void mtcnn::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
             ex.extract("prob1", score);
             ex.extract("conv6-2", bbox);
             ex.extract("conv6-3", keyPoint);
-            if(score[1]>threshold[2]){
+            if(score.channel(1)[0]>threshold[2]){
                 for(int channel=0;channel<4;channel++)
-                    it->regreCoord[channel]=bbox[channel];
+                    it->regreCoord[channel]=bbox.channel(channel)[0];
                 it->area = (it->x2 - it->x1)*(it->y2 - it->y1);
-                it->score = score[1];
+                it->score = score.channel(1)[0];
                 for(int num=0;num<5;num++){
-                    (it->ppoint)[num] = it->x1 + (it->x2 - it->x1)*keyPoint[num];
-                    (it->ppoint)[num+5] = it->y1 + (it->y2 - it->y1)*keyPoint[num+5];
+                    (it->ppoint)[num] = it->x1 + (it->x2 - it->x1)*keyPoint.channel(num)[0];
+                    (it->ppoint)[num+5] = it->y1 + (it->y2 - it->y1)*keyPoint.channel(num+5)[0];
                 }
 
                 thirdBbox_.push_back(*it);
@@ -363,7 +363,7 @@ int main(int argc, char** argv)
     printf( "%s = %g ms \n ", "Detection All time", getElapse(&tv1, &tv2) );
     for(vector<Bbox>::iterator it=finalBbox.begin(); it!=finalBbox.end();it++){
         if((*it).exist){
-            rectangle(cv_img, Point((*it).x1, (*it).y1), Point((*it).x2, (*it).y2), Scalar(0,0,255), 2,8,0);
+            cv::rectangle(cv_img, Point((*it).x1, (*it).y1), Point((*it).x2, (*it).y2), Scalar(0,0,255), 2,8,0);
             for(int num=0;num<5;num++)circle(cv_img,Point((int)*(it->ppoint+num), (int)*(it->ppoint+num+5)),3,Scalar(0,255,255), -1);
         }
     }

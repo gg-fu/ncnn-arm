@@ -1,0 +1,7 @@
+/home/bruvin_lu/tensorflow_test/ncnn/src/CMakeFiles/install/strip.dir
+/home/bruvin_lu/tensorflow_test/ncnn/src/CMakeFiles/install/local.dir
+/home/bruvin_lu/tensorflow_test/ncnn/src/CMakeFiles/ncnn.dir
+/home/bruvin_lu/tensorflow_test/ncnn/src/CMakeFiles/edit_cache.dir
+/home/bruvin_lu/tensorflow_test/ncnn/src/CMakeFiles/rebuild_cache.dir
+/home/bruvin_lu/tensorflow_test/ncnn/src/CMakeFiles/install.dir
+/home/bruvin_lu/tensorflow_test/ncnn/src/CMakeFiles/list_install_components.dir
